@@ -1,4 +1,4 @@
-.PHONY: run format lint check
+.PHONY: run format lint test check
 
 run:
 	uv run python -m src
@@ -9,6 +9,9 @@ format:
 lint:
 	uv run ruff check . --fix
 	uv run mypy .
+
+test:
+	uv run python -m unittest discover -s tests -v
 
 check:
 	uv run pre-commit run --all-files
