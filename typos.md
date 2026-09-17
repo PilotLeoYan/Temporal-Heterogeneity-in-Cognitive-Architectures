@@ -20,6 +20,7 @@ It also details the technical rationale and assumptions implemented in [`configs
 | **6** | **Network Architecture** | "Two-layer neural network" (Fig 3 caption) | Single-layer linear mapping $y = Wx$ | `src/components/layer.py` | Adding hidden layers violates Sanger (1989) PCA convergence. |
 | **7** | **Textual Slips** | "amount of food remained positive" (Sec 5.4) | Refers to agent internal **energy** | N/A | Semantic confusion between environment items and internal states. |
 | **8** | **Fitness Plotting Metric** | "only the average of the top 10 agents with the highest fitness during that run was plotted" (Figs. 6 & 7 captions) | Monotonically non-decreasing cumulative maximum ($\text{cummax}$) of top-10 fitness | `src/simulation/visualization.py` | Direct raw plotting exhibits strong inter-generational variance, obscuring the step plateaus seen in Figures 6 & 7. |
+| **9** | **Sensory Normalization (Energy & Coins)** | "adding additional values representing the energy level, the fitness score" (Sec 5.2) | `energy / 100.0` and `float(coins) / 50.0` | `src/components/world.py` | Raw magnitudes ($10^1 - 10^2$) overwhelm binary vision features ($\{0, 1\}$), dominating Sanger PCA and blinding the agent to the environment. |
 
 ---
 
@@ -171,3 +172,37 @@ It also details the technical rationale and assumptions implemented in [`configs
      - **Homogeneity ($a=1$):** Dashed line (`--`, `dashes=(6, 3)`, warm amber `#d95f02`).
      - **Variance Bands:** Distinct hatch pattern (`//`) for homogeneity vs smooth alpha for heterogeneity.
      - **Legends:** Explicitly annotate the line style (`solid` vs `dashed`) so graphs are immediately distinguishable in monochrome or greyscale printouts.
+
+---
+
+### 9. Sensory Normalization of Internal States (Energy & Coins) (Section 5.2)
+
+* **Paper Location:** Section 5.2 (*Virtual Agents - Exteroception*), paragraph following Fig. 4:
+  > *"Finally, one last vector is created, concatenating the three binary vectors and adding additional values representing the energy level, the fitness score, and the input vectors from Motor Layer 1 and Perceptual Layer 2. This results in a vector of length 24+24+24+1+1+4+19 = 97."*
+* **The Discrepancy:**
+  The authors specify that the 74-dimensional sensory vector feeding into Perceptual Layer 1 is constructed by concatenating:
+  1. Three 24-dimensional binary vectors for food, coins, and barriers ($\mathbf{s} \in \{0, 1\}^{24}$).
+  2. One scalar representing current energy level.
+  3. One scalar representing collected coins (fitness score).
+
+  However, the paper **never specifies the scale, bounds, or normalization applied to the energy and coin scalars**.
+* **Why Normalization is Required:**
+  1. **Scale Disparity with Binary Percepts:**
+     The visual receptive field provides 72 binary dimensions strictly bounded in $\{0, 1\}$. In contrast, raw energy ranges in $[0.0, 100.0]$ and coins scale from $0$ to $50+$. Unnormalized scalar inputs would be one to two orders of magnitude larger than visual signals.
+  2. **Variance Dominance in Sanger's Hebbian Learning (PCA):**
+     Sanger's Generalized Hebbian Algorithm (Sanger, 1989) is an unsupervised learning rule that extracts the leading eigenvectors (principal components) of the input correlation matrix $\mathbb{E}[\mathbf{x}\mathbf{x}^T]$.
+     If the internal states are left unnormalized:
+     - The squared magnitude of raw energy is up to $100^2 = 10,000$.
+     - The squared magnitude of coins is up to $50^2 = 2,500$.
+     - The squared magnitude of any visual feature is at most $1^2 = 1$.
+     Because the variance of energy and coins would be $10^3$ to $10^4$ times larger than visual features, the first principal components learned by Perceptual Layer 1 would almost exclusively represent energy depletion and coin accumulation. This would effectively render the agent **"blind"** to surrounding obstacles, food, and coins in its $5 \times 5$ sensory field.
+  3. **Gradient Stability in Hebbian Weight Updates:**
+     The weight update $\Delta W_{ij} = \eta y_i \left( x_j - \sum_{k=1}^i y_k W_{kj} \right)$ scales directly with the input value $x_j$. Inputs of magnitude $100$ would drive large weight oscillations and induce premature clipping saturation at the $[-1.0, 1.0]$ bounds.
+* **Our Implementation Decision:**
+  In [`src/components/world.py`](./src/components/world.py):
+  ```python
+  sensory[3 * n] = energy / 100.0
+  sensory[3 * n + 1] = float(coins) / 50.0
+  ```
+  - **`energy / 100.0`:** Linearly rescales current energy from $[0.0, 100.0]$ to $[0.0, 1.0]$, matching the $[0, 1]$ range of the binary receptive fields.
+  - **`float(coins) / 50.0`:** Linearly rescales collected coins by the empirical upper ceiling observed across all paper experiments (~40–50 coins in Figures 6 & 7), keeping the fitness feature normalized in $[0.0, 1.0]$.
