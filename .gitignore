@@ -1,0 +1,8 @@
+# Dirs & cache
+.mypy_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+notes/
+results/
+test_overflow_results/

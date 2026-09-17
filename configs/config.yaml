@@ -1,0 +1,68 @@
+agent:
+  max_agent_steps: 10_000 # 5.3 Evolution
+  initial_energy: 100.0 # table 2
+  move_cost: 0.5 # table 2
+  # 0.5% / 6 = 0.08333
+  # but in the table the authors wrote 0.833 above
+  thinking_cost_per_layer: 0.0833
+  max_energy: 100.0 # table 2
+  # foog energy is not write in the paper,
+  # we assume that is 25 percent
+  food_energy_gain: 25.0
+
+# table 4: (total input, output, bottom, lateral, top)
+p_dims:
+  p1_dims: [97, 39, 74, 4, 19]
+  p2_dims: [56, 19, 39, 8, 9]
+  p3_dims: [28, 9, 19, 9, 0]
+
+# table 4: (total input, output, bottom, lateral, top)
+m_dims:
+  m1_dims: [47, 4, 0, 39, 8]
+  m2_dims: [32, 8, 4, 19, 9]
+  m3_dims: [17, 9, 8, 9, 0]
+
+cognitive_architecture:
+  weight_init: 1e-4 # 5.3 Evolution
+  # learning rate is not mentioned in the paper.
+  # we assume 1e-3
+  learning_rate: 1e-3
+  n_activations: 3
+
+world:
+  empty_prob: 0.26 # table 1
+  food_prob: 0.23 # table 1
+  coin_prob: 0.25 # table 1
+  barrier_prob: 0.26 # table 1
+  id_elements: [0, 1, 2, 3] # [empty, food, coin, barrier]
+  grid_size: 50 # 5.1 Virtual World
+  vision_radius: 2 # 5x5 window centered on agent
+
+evolution:
+  pop_size: 100 # 6.2 Phylogeny
+  elite_ratio: 0.10 # Top 10% elite agents
+  elite_offspring_ratio: 0.70 # 70% offspring from elite
+  rest_offspring_ratio: 0.30 # 30% offspring from rest
+  mutation_scale: 1e-4 # U(-1e-4, 1e-4) Lamarckian mutation
+  n_generations: 100 # Default number of generations
+  seed: 42 # Default random seed
+  top_average_agents: 10 # Number of top agents for mean fitness tracking
+
+simulation:
+  generations: 4_500 # 45_000 in paper
+  num_runs: 1
+  results_dir: "results"
+  buffer_types:
+    - "average"
+    - "decay"
+    - "peek_end"
+  memory_regimes:
+    - "short_term"
+    - "long_term"
+  activations:
+    heterogeneous: 3
+    homogeneous: 1
+  top_average_agents: 10
+  # Number of parallel worker processes for run_all (e.g. 4 preserves CPU for desktop)
+  max_workers: 6
+

@@ -1,0 +1,80 @@
+[project]
+name = "unofficial-temporal-heterogeneity-paper"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "LeoYan", email = "leofabyano@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "matplotlib>=3.8.0",
+    "numpy>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "pyyaml>=6.0.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.2,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.1",
+    "pre-commit>=4.6.2",
+    "ruff>=0.16.5",
+    "pip-audit>=2.7.3",
+    "ipykernel>=7.3.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+# Maximum line length (88 is the modern standard in Python)
+line-length = 88
+
+# Target Python version (based on your pyproject.toml)
+target-version = "py311"
+
+[tool.ruff.lint]
+# Select the rules we want it to check:
+# E: Style errors (pycodestyle)
+# F: Logical errors (Pyflakes) – e.g. unused variables
+# I: Import sorting (isort) – groups standard, third-party and local imports
+# W: Warnings
+# UP: Syntax updates (pyupgrade) – suggests modern syntax
+select = ["E", "F", "I", "W", "UP"]
+
+[tool.ruff.format]
+# We enforce the use of double quotes for strings (industry standard)
+quote-style = "double"
+
+[tool.mypy]
+# Requires all functions to have defined input and output types
+disallow_untyped_defs = true
+explicit_package_bases = true
+
+# It issues a warning if you return a type of "Any" (which is like telling Mypy "I don't know what type it is, ignore it")
+warn_return_any = true
+
+# It alerts you if there is any inaccessible code (e.g. code after a "return")
+warn_unreachable = true
+
+# Ignore errors if you import third-party libraries that do not have type hints defined
+ignore_missing_imports = true
+
+[tool.bandit]
+# Folders to Exclude During Security Scans
+exclude_dirs = [
+    "tests",
+    "assets",
+    "configs",
+    ".venv"
+]
+
+# Rules to skip
+skips = ["B101", "B311"]
